@@ -1,0 +1,28 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: carenote
+      POSTGRES_USER: carenote
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-demo-password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U carenote -d carenote"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  app:
+    build: .
+    environment:
+      SECRET_KEY: ${SECRET_KEY:-local-demo-secret-change-before-deploy}
+      DATABASE_URL: postgresql+psycopg://carenote:${POSTGRES_PASSWORD:-local-demo-password}@db:5432/carenote
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  postgres_data:
